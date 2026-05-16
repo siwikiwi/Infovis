@@ -137,6 +137,58 @@ body {
     border-top: 1px solid #e2e8f0;
 }
 
+/* ── BOTÓN AUDIO TEXTO ── */
+
+.btn-read {
+  border: none;
+  background: white;
+  cursor: pointer;
+
+  width: 34px;
+  height: 34px;
+
+  border-radius: 999px;
+
+  font-size: 1rem;
+
+  margin-bottom: 12px;
+
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+
+  transition: transform 0.18s;
+}
+
+.btn-read:hover {
+  transform: scale(1.08);
+}
+
+.metric-def .btn-read {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── BOTÓN EN INSIGHTS ── */
+
+.insight-item {
+  position: relative;
+}
+
+.insight-item .btn-read {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
+.narrative {
+  position: relative;
+}
+
+.narrative .btn-read {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+} 
+
 /* =========================================
    RESPONSIVIDAD
    ========================================= */

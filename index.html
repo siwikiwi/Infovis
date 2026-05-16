@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frutas más vendidas en la RM – 2025</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+
+  <style>
+    :root {
+      --bg:        #faf7f2;
+      --card:      #ffffff;
+      --text:      #1e2027;
+      --muted:     #6b7280;
+      --accent:    #d4500a;
+      --accent-lt: #fff0e8;
+      --line:      #e8e2d9;
+      --radius:    16px;
+      --shadow:    0 2px 24px rgba(0,0,0,0.07);
+      --c-invierno:  #457B9D;
+      --c-otono:     #E76F51;
+      --c-primavera: #52B788;
+      --c-verano:    #F4A261;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .page { max-width: 1200px; margin: 0 auto; padding: 56px 24px 64px; }
+    .page-inner { max-width: 860px; }
+
+    .header { margin-bottom: 36px; }
+    .label {
+      display: inline-block;
+      font-size: 0.78rem; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--accent); background: var(--accent-lt);
+      border-radius: 6px; padding: 4px 10px; margin-bottom: 18px;
+    }
+    h1 {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(1.7rem, 3.5vw, 2.6rem);
+      font-weight: 900; line-height: 1.15;
+      letter-spacing: -0.02em; color: var(--text);
+      max-width: 720px; margin-bottom: 16px;
+    }
+
+    .narrative {
+      background: var(--card);
+      border: 1px solid var(--line); border-left: 4px solid var(--accent);
+      border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px;
+    }
+    .narrative p { font-size: 1rem; line-height: 1.75; color: #374151; }
+    .narrative strong { color: var(--accent); }
+
+    .metric-def {
+      display: flex; gap: 12px; align-items: flex-start;
+      background: #f0faf4; border: 1px solid #c6e8d4;
+      border-radius: var(--radius); padding: 16px 20px;
+      margin-bottom: 32px; font-size: 0.93rem;
+      line-height: 1.65; color: #1e4d35;
+    }
+    .metric-def .icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── BOTONES ESTACIÓN ── */
+    .season-row {
+      display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .btn-season {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 10px 20px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+      border-radius: 999px; border: 2px solid transparent;
+      background: var(--card); cursor: pointer; transition: all 0.18s;
+      color: var(--muted); box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .btn-season .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .btn-season[data-season="Invierno"]  .dot { background: var(--c-invierno); }
+    .btn-season[data-season="Otoño"]     .dot { background: var(--c-otono); }
+    .btn-season[data-season="Primavera"] .dot { background: var(--c-primavera); }
+    .btn-season[data-season="Verano"]    .dot { background: var(--c-verano); }
+    .btn-season:hover { color: var(--text); border-color: var(--line); }
+    .btn-season.active[data-season="Invierno"]  { border-color: var(--c-invierno);  color: var(--c-invierno);  background: #eaf3f8; }
+    .btn-season.active[data-season="Otoño"]     { border-color: var(--c-otono);     color: var(--c-otono);     background: #fdf0ec; }
+    .btn-season.active[data-season="Primavera"] { border-color: var(--c-primavera); color: var(--c-primavera); background: #edf8f3; }
+    .btn-season.active[data-season="Verano"]    { border-color: var(--c-verano);    color: var(--c-verano);    background: #fef6ec; }
+
+    /* ── SONIFICACIÓN HOVER ── */
+    .audio-row {
+      display: flex; align-items: center;
+      gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .btn-audio {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 18px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600;
+      border-radius: 999px; border: 1.5px solid var(--line);
+      background: var(--card); color: var(--muted);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-audio:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-audio.on { background: var(--accent-lt); border-color: var(--accent); color: var(--accent); }
+    .audio-hint { font-size: 0.8rem; color: var(--muted); }
+
+    /* ── GRÁFICO ── */
+    .chart-card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      overflow: hidden; margin-bottom: 16px;
+    }
+    #chart { width: 100%; height: 520px; }
+
+    /* ── INSIGHT HOVER ── */
+    .hover-insight {
+      background: var(--card); border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius); padding: 14px 20px;
+      margin-bottom: 24px; font-size: 0.9rem; color: #374151; min-height: 52px;
+    }
+    .hover-insight span { font-weight: 600; color: var(--accent); }
+
+    /* ── CONCLUSIONES ── */
+    .insight {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px; margin-bottom: 40px;
+    }
+    .insight-item {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 16px 20px;
+    }
+    .insight-item .emoji { font-size: 1.4rem; margin-bottom: 8px; }
+    .insight-item p { font-size: 0.9rem; line-height: 1.6; color: #374151; }
+    .insight-item strong { color: var(--text); }
+
+    footer {
+      border-top: 1px solid var(--line); padding-top: 20px;
+      font-size: 0.82rem; color: var(--muted); line-height: 1.7;
+      display: flex; flex-wrap: wrap; gap: 6px 32px; justify-content: space-between;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .page { padding: 36px 16px 48px; }
+      .narrative { padding: 16px 18px; }
+      #chart { height: 380px; }
+      footer { flex-direction: column; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+
+  <div class="page-inner">
+    <header class="header">
+      <div class="label">RM · 2025 · Visualización interactiva</div>
+      <h1>¿Cómo varía el ingreso de las 5 frutas más vendidas en la RM según la estación?</h1>
+    </header>
+
+    <div class="narrative">
+
+      <button class="btn-read"
+              onclick="playNarrativeAudio('narrativa.mp3')">
+        🔊
+      </button>
+
+      <p>
+        El mercado frutícola de la Región Metropolitana no es uniforme durante el año.
+        Algunas frutas concentran sus ventas en verano, mientras otras sostienen el mercado en invierno.
+        Esta visualización muestra <strong>cómo cambia el ingreso bruto de los principales productos
+        a lo largo de las cuatro estaciones de 2025</strong>, revelando qué frutas dominan en cada
+        período y cuáles presentan mayor volatilidad estacional.
+        Usa los <strong>botones de estación</strong> para cambiar la vista y pasa el cursor
+        sobre las barras para explorar los datos.</p>
+
+    </div>
+
+    <div class="metric-def">
+
+      <span class="icon">📐</span>
+
+      <button class="btn-read"
+              onclick="playNarrativeAudio('definicion_ingreso.mp3')">
+        🔊
+      </button>
+
+      <div>
+        <strong>¿Qué es el ingreso bruto por estación?</strong><br>
+        Corresponde a la multiplicación entre el <em>volumen de kilos comercializados</em> y el
+        <em>precio mayorista promedio</em> de cada período. Representa el flujo económico total
+        generado por cada producto en el mercado mayorista, sin descontar costos ni gastos de operación.
+      </div>
+
+    </div>
+
+    <!-- BOTONES DE ESTACIÓN -->
+    <div class="season-row">
+      <button class="btn-season active" data-season="Invierno"><span class="dot"></span>Invierno</button>
+      <button class="btn-season"        data-season="Otoño">   <span class="dot"></span>Otoño</button>
+      <button class="btn-season"        data-season="Primavera"><span class="dot"></span>Primavera</button>
+      <button class="btn-season"        data-season="Verano">  <span class="dot"></span>Verano</button>
+    </div>
+
+    <!-- SONIFICACIÓN HOVER -->
+    <div class="audio-row">
+      <button class="btn-audio" id="btn-audio">
+        <span>🔇</span> Activar sonificación al hover
+      </button>
+      <span class="audio-hint">Cada barra emite un tono al pasar el cursor — más agudo = mayor ingreso.</span>
+    </div>
+  </div>
+
+  <!-- GRÁFICO — ancho completo -->
+  <div class="chart-card">
+    <div id="chart"></div>
+  </div>
+
+  <div class="page-inner">
+    <div class="hover-insight" id="hover-insight">
+      💡 Pasa el cursor sobre una barra para ver el detalle del producto.
+    </div>
+
+    <div class="insight">
+    <div class="insight-item">
+
+      <button class="btn-read"
+              onclick="playNarrativeAudio('insight_palta.mp3')">
+        🔊
+      </button>
+
+      <div class="emoji">🥑</div>
+
+      <p>
+        <strong>Palta lidera en invierno</strong>
+        con el mayor ingreso bruto de la estación,
+        cuando la oferta de otras frutas cae.
+      </p>
+
+    </div>
+    <div class="insight-item">
+
+      <button class="btn-read"
+              onclick="playNarrativeAudio('insight_cebolla.mp3')">
+        🔊
+      </button>
+
+      <div class="emoji">🧅</div>
+
+      <p>
+        <strong>Cebolla domina en primavera</strong>,
+        concentrando más del 30% del ingreso total
+        de esa estación.
+      </p>
+
+    </div>
+    <div class="insight-item">
+
+      <button class="btn-read"
+              onclick="playNarrativeAudio('insight_general.mp3')">
+        🔊
+      </button>
+
+      <div class="emoji">📊</div>
+
+      <p>
+        El <strong>ranking cambia por estación</strong>:
+        ningún producto domina de forma constante
+        durante todo el año.
+      </p>
+
+    </div>
+    </div>
+
+    <footer>
+      <span>
+        <strong>Fuente:</strong> Portal de Datos Abiertos del Estado —
+        <em>Precios mayoristas de frutas y hortalizas</em><br>
+        <a href="https://datos.gob.cl/dataset/precios-mayoristas-de-frutas-y-hortaliz"
+           target="_blank" rel="noopener noreferrer">
+          datos.gob.cl/dataset/precios-mayoristas-de-frutas-y-hortaliz
+        </a>
+      </span>
+      <span>E1</span>
+    </footer>
+  </div>
+
+</main>
+<script>
+// ═══════════════════════════════════════════════════════
+// 🎵 NOMBRES DE ARCHIVO DE AUDIO
+// Pon tus MP3 en la misma carpeta que este index.html.
+// Si cambias los nombres, edítalos aquí:
+// ═══════════════════════════════════════════════════════
+const SEASON_SOUNDS = {
+  Invierno:  'sonido_invierno.mp3',
+  Otoño:     'sonido_otono.mp3',
+  Primavera: 'sonido_primavera.mp3',
+  Verano:    'sonido_verano.mp3',
+};
+
+// ─────────────────────────────────────────
+// DATOS
+// ─────────────────────────────────────────
+const DATA = {
+  Invierno: {
+    productos:     ["Palta","Plátano","Papa","Tomate","Cebolla","Manzana","Zanahoria","Lechuga","Pimiento","Ajo"],
+    ingresos:      [9.34e8, 8.68e8, 8.66e8, 7.93e8, 6.62e8, 5.22e8, 3.48e8, 3.42e8, 3.38e8, 3.02e8],
+    volumenes:     [511021, 369327, 1309160, 673794, 1250456, 71944, 566220, 549079, 155210, 181103],
+    participacion: [9.34, 8.68, 8.66, 7.93, 6.62, 5.22, 3.48, 3.42, 3.38, 3.02],
+  },
+  Otoño: {
+    productos:     ["Tomate","Papa","Limón","Plátano","Cebolla","Palta","Ajo","Pimiento","Lechuga","Manzana"],
+    ingresos:      [16.08e8, 10.01e8, 7.94e8, 7.35e8, 5.49e8, 4.28e8, 3.63e8, 3.30e8, 3.06e8, 2.93e8],
+    volumenes:     [901881, 1485750, 686415, 370500, 1545478, 407664, 170095, 220735, 536638, 51664],
+    participacion: [16.08, 10.01, 7.94, 7.35, 5.49, 4.28, 3.63, 3.30, 3.06, 2.93],
+  },
+  Primavera: {
+    productos:     ["Cebolla","Tomate","Papa","Ajo","Plátano","Limón","Manzana","Palta","Zanahoria","Poroto verde"],
+    ingresos:      [30.00e8, 7.08e8, 5.53e8, 4.99e8, 4.71e8, 3.41e8, 2.99e8, 2.62e8, 2.43e8, 2.31e8],
+    volumenes:     [20499160, 772064, 1261898, 2788102, 306821, 582614, 56227, 352947, 602948, 105097],
+    participacion: [30.00, 7.08, 5.53, 4.99, 4.71, 3.41, 2.99, 2.62, 2.43, 2.31],
+  },
+  Verano: {
+    productos:     ["Cebolla","Tomate","Limón","Papa","Plátano","Poroto granado","Pimiento","Lechuga","Choclo","Zanahoria"],
+    ingresos:      [16.78e8, 11.50e8, 9.58e8, 7.07e8, 5.38e8, 3.25e8, 3.13e8, 2.54e8, 2.43e8, 2.38e8],
+    volumenes:     [12495211, 1060024, 673591, 1399292, 289175, 165073, 263336, 461343, 15379500, 457051],
+    participacion: [16.78, 11.50, 9.58, 7.07, 5.38, 3.25, 3.13, 2.54, 2.43, 2.38],
+  }
+};
+
+const SEASON_COLOR = {
+  Invierno:  '#457B9D',
+  Otoño:     '#E76F51',
+  Primavera: '#52B788',
+  Verano:    '#F4A261',
+};
+
+const ESTACIONES = ['Invierno','Otoño','Primavera','Verano'];
+
+// ─────────────────────────────────────────
+// AUDIO MP3 POR ESTACIÓN
+// ─────────────────────────────────────────
+// Pre-carga los elementos <audio> al inicio
+const audioEls = {};
+ESTACIONES.forEach(est => {
+  const el = new Audio(SEASON_SOUNDS[est]);
+  el.preload = 'auto';
+  audioEls[est] = el;
+});
+
+let currentAudio = null;
+
+function playSeasonSound(season) {
+  // Detener cualquier sonido anterior
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+  }
+  const audio = audioEls[season];
+  audio.currentTime = 0;
+  // Cortar automáticamente a 2 segundos
+  const stopAt2s = () => {
+    if (audio.currentTime >= 2) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.removeEventListener('timeupdate', stopAt2s);
+    }
+  };
+  audio.addEventListener('timeupdate', stopAt2s);
+  audio.play().catch(() => {
+    // Si el archivo no existe o el navegador bloquea, no pasa nada
+  });
+  currentAudio = audio;
+}
+
+// ─────────────────────────────────────────
+// GRÁFICO
+// ─────────────────────────────────────────
+function buildTrace(season) {
+  const d = DATA[season];
+  return {
+    type: 'bar',
+    x: d.productos,
+    y: d.ingresos,
+    marker: {
+      color: SEASON_COLOR[season],
+      opacity: 0.88,
+      line: { color: 'white', width: 1.5 }
+    },
+    text: d.ingresos.map(v => '$' + (v / 1e6).toFixed(0) + 'M'),
+    textposition: 'outside',
+    textfont: { size: 10.5, color: '#374151', family: 'DM Sans, sans-serif' },
+    cliponaxis: false,
+    customdata: d.productos.map((p, j) => [d.volumenes[j], d.participacion[j], season]),
+    hovertemplate:
+      '<b>%{x}</b><br>' +
+      'Ingreso bruto: $%{y:,.0f}<br>' +
+      'Volumen: %{customdata[0]:,.0f} kg<br>' +
+      'Participación: %{customdata[1]:.1f}%' +
+      '<extra></extra>',
+  };
+}
+
+const layout = {
+  paper_bgcolor: 'white',
+  plot_bgcolor:  'white',
+  margin: { t: 24, r: 24, b: 90, l: 80 },
+  font: { family: 'DM Sans, sans-serif', color: '#374151' },
+  xaxis: {
+    title: { text: 'Producto', font: { size: 12 }, standoff: 16 },
+    tickfont: { size: 12 }, showgrid: false,
+    linecolor: '#e8e2d9', tickangle: -20,
+  },
+  yaxis: {
+    title: { text: 'Ingreso bruto (CLP)', font: { size: 12 }, standoff: 10 },
+    tickformat: '$.2s', gridcolor: '#f0ece4',
+    linecolor: 'transparent', tickfont: { size: 11 }, range: [0, 35e8],
+  },
+  showlegend: false,
+};
+
+Plotly.newPlot('chart', [buildTrace('Invierno')], layout, { responsive: true, displayModeBar: false });
+
+// ─────────────────────────────────────────
+// BOTONES DE ESTACIÓN
+// ─────────────────────────────────────────
+document.querySelectorAll('.btn-season').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const season = btn.dataset.season;
+    document.querySelectorAll('.btn-season').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    Plotly.react('chart', [buildTrace(season)], layout, { responsive: true, displayModeBar: false });
+    playSeasonSound(season); // 🔊 reproduce el MP3 de esa estación
+  });
+});
+
+// ─────────────────────────────────────────
+// INSIGHT DINÁMICO
+// ─────────────────────────────────────────
+const insightEl = document.getElementById('hover-insight');
+const contexto = {
+  Palta:            'Concentra su mayor ingreso en invierno, cuando la oferta de otras frutas disminuye.',
+  Plátano:          'Mantiene ingresos relativamente estables a lo largo del año.',
+  Papa:             'Alta demanda constante con picos notorios en otoño e invierno.',
+  Tomate:           'Lidera el ingreso en otoño y verano, sus estaciones de mayor demanda.',
+  Cebolla:          'Domina en primavera con más del 30% del ingreso total de la estación.',
+  Limón:            'Mayor ingreso en otoño y verano, cuando la demanda por refresco y vitamina C sube.',
+  Manzana:          'Presencia estacional marcada, con mayor ingreso en meses fríos.',
+  Zanahoria:        'Demanda constante todo el año con ingresos moderados.',
+  Lechuga:          'Mayor ingreso en estaciones frías, cuando la oferta de hoja verde baja.',
+  Pimiento:         'Mejor momento en invierno y primavera.',
+  Ajo:              'Participación relevante en primavera con alto volumen.',
+  'Poroto verde':   'Producto de temporada primaveral.',
+  'Poroto granado': 'Protagonista en verano.',
+  Choclo:           'Producto marcadamente estival, concentrado en los meses de calor.',
+};
+
+// ─────────────────────────────────────────
+// SONIFICACIÓN HOVER CON MP3 + PITCH REAL
+// ─────────────────────────────────────────
+
+let audioOn = false;
+
+// evita repetir sonido infinitamente
+let lastHoverIndex = null;
+
+// activa / desactiva audio
+document.getElementById('btn-audio').addEventListener('click', async function() {
+
+  await Tone.start();
+
+  audioOn = !audioOn;
+
+  if (audioOn) {
+    this.innerHTML = '<span>🔊</span> Sonificación activa';
+    this.classList.add('on');
+  } else {
+    this.innerHTML = '<span>🔇</span> Activar sonificación al hover';
+    this.classList.remove('on');
+  }
+});
+
+// reproducir sonido
+function playHoverNote(ingreso) {
+
+  if (!audioOn) return;
+
+  // normaliza ingreso entre 0 y 1
+  const t = Math.min(
+    Math.max((ingreso - 3e8) / (30e8 - 3e8), 0),
+    1
+  );
+
+  // pitch más natural
+  // bajos = grave, altos = agudo
+  const playbackRate = 0.75 + (t * 0.9);
+
+  // nuevo audio
+  const audio = new Audio('Sonido de dinero.mp3');
+
+  audio.preload = 'auto';
+
+  // cambio de pitch
+  audio.playbackRate = playbackRate;
+
+  // mantiene pitch alterado
+  audio.preservesPitch = false;
+  audio.mozPreservesPitch = false;
+  audio.webkitPreservesPitch = false;
+
+  // volumen
+  audio.volume = 0.55;
+
+  // corta sonidos largos
+  audio.currentTime = 0;
+
+  audio.play().catch(() => {});
+}
+
+// ─────────────────────────────────────────
+// HOVER SOLO SOBRE BARRAS REALES
+// ─────────────────────────────────────────
+
+document.getElementById('chart').on('plotly_hover', function(data) {
+
+  // si no hay punto real, salir
+  if (!data.points || !data.points.length) return;
+
+  const pt = data.points[0];
+
+  // SOLO barras
+  if (pt.data.type !== 'bar') return;
+
+  // evita repetir el mismo sonido
+  if (lastHoverIndex === pt.pointIndex) return;
+
+  lastHoverIndex = pt.pointIndex;
+
+  const prod = pt.x;
+  const est = pt.customdata[2];
+  const ingreso = (pt.y / 1e6).toFixed(0);
+  const part = pt.customdata[1].toFixed(1);
+
+  insightEl.innerHTML =
+    `<span>${prod} · ${est}</span>: $${ingreso}M de ingreso bruto (${part}% del total de la estación). ${contexto[prod] || ''}`;
+
+  // sonido SOLO cuando realmente entra a barra
+  const totalBarras = DATA[est].productos.length;
+
+  const esPrimera = pt.pointIndex === 0;
+  const esUltima  = pt.pointIndex === totalBarras - 1;
+
+  if (esPrimera) {
+
+    const audio = new Audio('primer_lugar.mp3');
+
+    audio.volume = 0.6;
+
+    audio.play().catch(() => {});
+
+  }
+
+  if (esUltima) {
+
+    const audio = new Audio('ultimo_lugar.mp3');
+
+    audio.volume = 0.6;
+
+    audio.play().catch(() => {});
+
+  }});
+
+document.getElementById('chart').on('plotly_unhover', () => {
+
+  lastHoverIndex = null;
+
+  insightEl.innerHTML =
+    '💡 Pasa el cursor sobre una barra para ver el detalle del producto.';
+});
+// ─────────────────────────────────────────
+// AUDIO DE NARRACIONES
+// ─────────────────────────────────────────
+
+let currentNarration = null;
+
+function playNarrativeAudio(src) {
+
+  // detener audio anterior
+  if (currentNarration) {
+    currentNarration.pause();
+    currentNarration.currentTime = 0;
+  }
+
+  const audio = new Audio(src);
+
+  audio.volume = 0.9;
+
+  audio.play().catch(() => {});
+
+  currentNarration = audio;
+}
+</script>
+</body>
+</html>
